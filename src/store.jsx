@@ -35,9 +35,20 @@ const upload=async(bucket,f)=>{const path=`${user.id}/${crypto.randomUUID()}.${f
 const api={pets,apps,notes,people,user,authLoading,dataLoading,flash,setFlash,run,reload:loadAll,upload,configured:isConfigured,
 login:async(email,password)=>{if(!isConfigured)return NOCFG;const {error}=await supabase.auth.signInWithPassword({email,password});
  return error?{message:/confirm/i.test(error.message)?'Please confirm your email first.':'Invalid email or password'}:null},
-register:async({name,email,password,role})=>{if(!isConfigured)return {error:NOCFG};
- const {data,error}=await supabase.auth.signUp({email,password,options:{data:{name,role}}});return error?{error}:{confirm:!data.session}},
-logout:()=>supabase?.auth.signOut(),
+register: async ({ name, email, password, role }) => {
+  if (!isConfigured) return { error: NOCFG };
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: window.location.origin + '/login',
+      data: { name, role },
+    },
+  });
+
+  return { data, error };
+},
 updateProfile:async d=>{const {error}=await supabase.from('profiles').update(d).eq('id',user.id);if(!error)setUser(u=>({...u,...d}));return error},
 listProfiles:async()=>{const {data,error}=await supabase.from('profiles').select('id,name,email,role,city').order('created_at');return {data:data||[],error}},
 grantRole:(id,role)=>supabase.rpc('grant_role',{target:id,new_role:role}),
